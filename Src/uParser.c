@@ -12,7 +12,7 @@
  * @copyright  Copyright (c) 2026, AdamS-0
  * @license    LGPL-2.1
  */
- 
+
 /* Includes ----------------------------------------------------------- */
 #include "uParser.h"
 
@@ -29,7 +29,7 @@ void _uParser_resetCntrs(uParser_t *pUParser) {
     pUParser->cntrs.foundSyncStop   = 0;
     pUParser->cntrs.foundHeader     = 0;
     pUParser->cntrs.foundPayload    = 0;
-    pUParser->cntrs.bytesResync     = 0;
+    pUParser->cntrs.bytesSkipped    = 0;
 }
 
 uParser_regStatus_e _uParser_registerCommon(
@@ -64,18 +64,21 @@ uParser_status_e _uParser_parseByLen(uParser_t *pUParser, uint8_t byteIn) {
         /* Looking for sync sequence */
         
         if ( pUParser->seqStartIdx >= pUParser->seqStartLen ) {
-            /* This case sohuld never be reached */
+            /* This case should never be reached */
             pUParser->state = uParser_state_IDLE;
             return uParser_status_LOOKING;
         }
         
         if ( pUParser->pSeqStart[pUParser->seqStartIdx] != byteIn ) {
-            pUParser->cntrs.bytesResync++;
-            if ( pUParser->pSeqStart[0] != byteIn ) {
-                /* This is first char of a SYNC START */
-                pUParser->pData[0]      = byteIn;
-                pUParser->seqStartIdx   = 0;
-                pUParser->byteIdx       = 0;
+            pUParser->pData[0]  = byteIn;
+            pUParser->byteIdx   = 1;
+
+            if ( pUParser->pSeqStart[0] == byteIn ) {
+                /* This is the first char of a SYNC START */
+                pUParser->seqStartIdx   = 1;
+                pUParser->cntrs.foundSyncStartAfterResync++;
+            } else {
+                pUParser->cntrs.bytesSkipped++;
             }
             return uParser_status_LOOKING;
         }
@@ -84,6 +87,7 @@ uParser_status_e _uParser_parseByLen(uParser_t *pUParser, uint8_t byteIn) {
         if ( pUParser->seqStartIdx == pUParser->seqStartLen ) {
             /* Found whole start sequence! */
             pUParser->state     = uParser_state_LOOKING_HEADER;
+            pUParser->byteIdx   = pUParser->seqStartLen;
             pUParser->seqEndIdx = 0;
             pUParser->cntrs.foundSyncStart++;
             return uParser_status_LOOKING;
@@ -111,7 +115,7 @@ uParser_status_e _uParser_parseByLen(uParser_t *pUParser, uint8_t byteIn) {
             pUParser->cntrs.expectedLenOverflow++;
             pUParser->state = uParser_state_IDLE;
             return uParser_status_INTERNAL_ERROR;
-        } else if ( pUParser->expectedFrameLength <= pUParser->byteIdx ) {
+        } else if ( pUParser->expectedFrameLength == pUParser->byteIdx ) {
             /* No bytes left, so just quit as FOUND */
             pUParser->state = uParser_state_IDLE;
             return uParser_status_FOUND;
