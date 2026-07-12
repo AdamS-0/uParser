@@ -12,7 +12,7 @@
  * @copyright  Copyright (c) 2026, AdamS-0
  * @license    LGPL-2.1
  */
- 
+
 #ifndef __UPARSER_H__
 #define __UPARSER_H__
 
@@ -40,7 +40,7 @@ typedef enum {
     uParser_type_BY_END_SEQ ,
 } uParser_type_e;
 
-/** @brief Function type, that is called after successfull header found.
+/** @brief Function type, that is called after successful header found.
  * Defined by user, and given as parameter in register function.
  * @param   pHeader Pointer of the Header part
  * @return  expectedLength - user should return total number of bytes
@@ -50,11 +50,12 @@ typedef uint16_t (*uParser_foundHeader_f)(uint8_t *pHeader);
 
 typedef struct {
     uint32_t    dataMaxOverflow;
+    uint32_t    foundSyncStartAfterResync;
     uint32_t    foundSyncStart;
     uint32_t    foundSyncStop;
     uint32_t    foundHeader;
     uint32_t    foundPayload;
-    uint32_t    bytesResync;
+    uint32_t    bytesSkipped;
     uint32_t    expectedLenOverflow;
 } uParser_cntrs_t;
 
