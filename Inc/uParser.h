@@ -94,7 +94,7 @@ typedef struct {
 
 typedef enum {
     uParser_status_INTERNAL_ERROR   = 0,
-    uParser_status_LOOKING          = 0,
+    uParser_status_LOOKING          ,
     uParser_status_FOUND            ,
 } uParser_status_e;
 
